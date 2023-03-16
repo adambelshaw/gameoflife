@@ -9,6 +9,7 @@ const CELL_DIES as ubyte = 3 ' cell was alive, is not dead
 
 dim _grid(GRID_WIDTH, GRID_HEIGHT) as ubyte
 
+
 sub initialiseGrid()
     for x = 0 to GRID_WIDTH step 1
         for y = 0 to GRID_HEIGHT step 1
@@ -17,16 +18,14 @@ sub initialiseGrid()
     next x
 end sub
 
-sub drawGrid()
+sub drawGrid()    
     for x = 0 to GRID_WIDTH step 1
         for y = 0 to GRID_HEIGHT step 1            
             if (_grid(x, y) = CELL_BORN) then
                 print at y, x; "\::"
-                let _grid(x, y) = CELL_LIVES
             else if (_grid(x, y) = CELL_DIES) then
                 print at y, x; " "
-                let _grid(x, y) = CELL_DEAD
-            end if
+            end if                        
         next y
     next x
 end sub
@@ -64,12 +63,41 @@ function getCellState(x as ubyte, y as ubyte) as ubyte
     return CELL_DIES
 end function
 
-sub iterateGrid()    
+sub iterateGrid()
+
+    dim activeGrid(GRID_WIDTH, GRID_HEIGHT) as ubyte
+    dim x2 as byte = 0
+    dim y2 as byte = 0
     for x = 0 to GRID_WIDTH step 1
         for y = 0 to GRID_HEIGHT step 1
-            let _grid(x, y) = getCellState(x, y)
+            ' optimisation - we only need to check cells that have changed and their neighbours
+            if (_grid(x, y) = CELL_BORN or _grid(x, y) = CELL_DIES) then
+                for x2 = x - 1 to x + 1 step 1
+                    if (x2 >= 0 and x2 <= GRID_WIDTH) then
+                        for y2 = y - 1 to y + 1 step 1
+                            if (y2 >= 0 and y2 <= GRID_HEIGHT) then
+                                let activeGrid(x2, y2) = 1
+                            end if
+                        next y2
+                    end if
+                next x2
+            end if
+            ' move changed cells to settled state for next iteration
+            if (_grid(x, y) = CELL_BORN) then                
+                let _grid(x, y) = CELL_LIVES
+            else if (_grid(x, y) = CELL_DIES) then
+                let _grid(x, y) = CELL_DEAD
+            end if 
         next y
     next x
+
+    for x = 0 to GRID_WIDTH step 1
+        for y = 0 to GRID_HEIGHT step 1
+            if (activeGrid(x, y) = 1) then
+                let _grid(x, y) = getCellState(x, y)
+            end if
+        next y
+    next x    
 end sub
 
 sub createGliderAt(x as ubyte, y as ubyte)
@@ -82,6 +110,9 @@ end sub
 
 initialiseGrid()
 createGliderAt(0, 0)
+createGliderAt(5, 5)
+createGliderAt(10, 10)
+createGliderAt(15, 15)
 do
 drawGrid()
 iterateGrid()
