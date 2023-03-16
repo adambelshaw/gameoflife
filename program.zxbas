@@ -81,13 +81,13 @@ sub iterateGrid()
                         next y2
                     end if
                 next x2
-            end if
-            ' move changed cells to settled state for next iteration
-            if (_grid(x, y) = CELL_BORN) then                
-                let _grid(x, y) = CELL_LIVES
-            else if (_grid(x, y) = CELL_DIES) then
-                let _grid(x, y) = CELL_DEAD
-            end if 
+                ' move changed cells to settled state for next iteration
+                if (_grid(x, y) = CELL_BORN) then                
+                    let _grid(x, y) = CELL_LIVES
+                else if (_grid(x, y) = CELL_DIES) then
+                    let _grid(x, y) = CELL_DEAD
+                end if 
+            end if            
         next y
     next x
 
