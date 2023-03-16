@@ -1,70 +1,87 @@
-const gridWidth as ubyte = 33 ' includes DMZ border
-const gridHeight as ubyte = 24 ' includes DMZ border
-dim grid(gridWidth, gridHeight) as byte
+const GRID_WIDTH as ubyte = 31 ' 31 character columns available
+const GRID_HEIGHT as ubyte = 22 ' 22 character rows available
+
+' possible cell states stored in _grid
+const CELL_DEAD as ubyte = 0 ' cell was dead, still is dead
+const CELL_LIVES as ubyte = 1 ' cell was alive, still is alive
+const CELL_BORN as ubyte = 2 ' cell was dead, is now alive
+const CELL_DIES as ubyte = 3 ' cell was alive, is not dead
+
+dim _grid(GRID_WIDTH, GRID_HEIGHT) as ubyte
 
 sub initialiseGrid()
-    for x = 0 to gridWidth step 1
-        for y = 0 to gridHeight step 1
-            let grid(x, y) = 0
+    for x = 0 to GRID_WIDTH step 1
+        for y = 0 to GRID_HEIGHT step 1
+            let _grid(x, y) = CELL_DEAD
         next y
     next x
 end sub
 
 sub drawGrid()
-    for x = 1 to gridWidth - 1 step 1
-        for y = 1 to gridHeight - 1 step 1
-            if (grid(x, y) = 1)
-                print at y - 1, x - 1; "\::"
-            else
-                print at y - 1, x - 1; " "
+    for x = 0 to GRID_WIDTH step 1
+        for y = 0 to GRID_HEIGHT step 1            
+            if (_grid(x, y) = CELL_BORN) then
+                print at y, x; "\::"
+                let _grid(x, y) = CELL_LIVES
+            else if (_grid(x, y) = CELL_DIES) then
+                print at y, x; " "
+                let _grid(x, y) = CELL_DEAD
             end if
         next y
     next x
 end sub
 
-function doesCellSurvive(x as ubyte, y as ubyte) as byte
-    dim total as ubyte = 0
-    dim isAlive as byte = grid(x, y)
-    for x2 = x - 1 to x + 1 step 1
-        for y2 = y - 1 to y + 1 step 1
-            if (x2 <> x or y2 <> y) then
-                let total = total + grid(x2, y2)
-            end if
-        next y2
-    next x2
-
-    if (isAlive = 1 and total > 1 and total < 4)
-        return 1
-    else if (isAlive = 0 and total = 3)
+function wasCellAlive(x as ubyte, y as ubyte) as ubyte
+    dim cellState as ubyte = _grid(x, y)
+    if (cellState = CELL_LIVES or cellState = CELL_DIES) then
         return 1
     end if
     return 0
 end function
 
+function getCellState(x as ubyte, y as ubyte) as ubyte
+    dim total as ubyte = 0
+    dim x2 as byte = 0
+    dim y2 as byte = 0
+    for x2 = x - 1 to x + 1 step 1
+        if (x2 >= 0 and x2 <= GRID_WIDTH) then
+            for y2 = y - 1 to y + 1 step 1
+                if (y2 >= 0 and y2 <= GRID_HEIGHT and (x2 <> x or y2 <> y) and wasCellAlive(x2, y2) = 1) then
+                    let total = total + 1
+                end if
+            next y2
+        end if
+    next x2
+
+    dim wasAlive as ubyte = wasCellAlive(x, y)
+    if (wasAlive = 1 and total > 1 and total < 4) then
+        return CELL_LIVES
+    else if (wasAlive = 0 and total = 3) then
+        return CELL_BORN
+    else if (wasAlive = 0) then
+        return CELL_DEAD
+    end if
+    return CELL_DIES
+end function
+
 sub iterateGrid()    
-    dim nextGrid(gridWidth, gridHeight) as byte
-    for x = 1 to gridWidth - 1 step 1
-        for y = 1 to gridHeight - 1 step 1
-            let nextGrid(x, y) = doesCellSurvive(x, y)
-        next y
-    next x
-    for x = 0 to gridWidth step 1
-        for y = 0 to gridHeight step 1
-            let grid(x, y) = nextGrid(x, y)
+    for x = 0 to GRID_WIDTH step 1
+        for y = 0 to GRID_HEIGHT step 1
+            let _grid(x, y) = getCellState(x, y)
         next y
     next x
 end sub
 
 sub createGliderAt(x as ubyte, y as ubyte)
-    let grid(x + 1, y) = 1
-    let grid(x + 2, y + 1) = 1
-    let grid(x, y + 2) = 1
-    let grid(x + 1, y + 2) = 1
-    let grid(x + 2, y + 2) = 1
+    let _grid(x + 1, y) = CELL_BORN
+    let _grid(x + 2, y + 1) = CELL_BORN
+    let _grid(x, y + 2) = CELL_BORN
+    let _grid(x + 1, y + 2) = CELL_BORN
+    let _grid(x + 2, y + 2) = CELL_BORN
 end sub
 
 initialiseGrid()
-createGliderAt(1, 1)
+createGliderAt(0, 0)
 do
 drawGrid()
 iterateGrid()
