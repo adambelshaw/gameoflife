@@ -6,33 +6,44 @@ const CELL_DEAD as ubyte = 0 ' cell was dead, still is dead
 const CELL_LIVES as ubyte = 1 ' cell was alive, still is alive
 const CELL_BORN as ubyte = 2 ' cell was dead, is now alive
 const CELL_DIES as ubyte = 3 ' cell was alive, is not dead
+' adding this to a cell state marks it as active
+const CELL_ACTIVE as ubyte = 4
 
 dim _grid(GRID_WIDTH, GRID_HEIGHT) as ubyte
 
-
-sub initialiseGrid()
+sub drawGrid()
+    dim x as ubyte = 0
+    dim y as ubyte = 0
+    dim x2 as byte = 0
+    dim y2 as byte = 0
     for x = 0 to GRID_WIDTH step 1
         for y = 0 to GRID_HEIGHT step 1
-            let _grid(x, y) = CELL_DEAD
-        next y
-    next x
-end sub
-
-sub drawGrid()    
-    for x = 0 to GRID_WIDTH step 1
-        for y = 0 to GRID_HEIGHT step 1            
-            if (_grid(x, y) = CELL_BORN) then
-                print at y, x; "\::"
-            else if (_grid(x, y) = CELL_DIES) then
-                print at y, x; " "
-            end if                        
+            if (_grid(x, y) mod CELL_ACTIVE = CELL_BORN or _grid(x, y) mod CELL_ACTIVE = CELL_DIES) then                
+                ' update UI and move cell to settled state for next iteration
+                if (_grid(x, y) mod CELL_ACTIVE = CELL_BORN) then                
+                    print at y, x; "\::"
+                    let _grid(x, y) = CELL_LIVES
+                else if (_grid(x, y) mod CELL_ACTIVE = CELL_DIES) then
+                    print at y, x; " "
+                    let _grid(x, y) = CELL_DEAD
+                end if 
+                ' cell has changed so mark its neighbours as active
+                for x2 = x - 1 to x + 1 step 1
+                    if (x2 >= 0 and x2 <= GRID_WIDTH) then
+                        for y2 = y - 1 to y + 1 step 1
+                            if (y2 >= 0 and y2 <= GRID_HEIGHT and (x2 <> x or y2 <> y) and _grid(x2, y2) < CELL_ACTIVE) then
+                                let _grid(x2, y2) = _grid(x2, y2) + CELL_ACTIVE
+                            end if
+                        next y2
+                    end if
+                next x2
+            end if      
         next y
     next x
 end sub
 
 function wasCellAlive(x as ubyte, y as ubyte) as ubyte
-    dim cellState as ubyte = _grid(x, y)
-    if (cellState = CELL_LIVES or cellState = CELL_DIES) then
+    if (_grid(x, y) mod CELL_ACTIVE = CELL_LIVES or _grid(x, y) mod CELL_ACTIVE = CELL_DIES) then
         return 1
     end if
     return 0
@@ -64,36 +75,9 @@ function getCellState(x as ubyte, y as ubyte) as ubyte
 end function
 
 sub iterateGrid()
-
-    dim activeGrid(GRID_WIDTH, GRID_HEIGHT) as ubyte
-    dim x2 as byte = 0
-    dim y2 as byte = 0
     for x = 0 to GRID_WIDTH step 1
         for y = 0 to GRID_HEIGHT step 1
-            ' optimisation - we only need to check cells that have changed and their neighbours
-            if (_grid(x, y) = CELL_BORN or _grid(x, y) = CELL_DIES) then
-                for x2 = x - 1 to x + 1 step 1
-                    if (x2 >= 0 and x2 <= GRID_WIDTH) then
-                        for y2 = y - 1 to y + 1 step 1
-                            if (y2 >= 0 and y2 <= GRID_HEIGHT) then
-                                let activeGrid(x2, y2) = 1
-                            end if
-                        next y2
-                    end if
-                next x2
-                ' move changed cells to settled state for next iteration
-                if (_grid(x, y) = CELL_BORN) then                
-                    let _grid(x, y) = CELL_LIVES
-                else if (_grid(x, y) = CELL_DIES) then
-                    let _grid(x, y) = CELL_DEAD
-                end if 
-            end if            
-        next y
-    next x
-
-    for x = 0 to GRID_WIDTH step 1
-        for y = 0 to GRID_HEIGHT step 1
-            if (activeGrid(x, y) = 1) then
+            if (_grid(x, y) >= CELL_ACTIVE) then
                 let _grid(x, y) = getCellState(x, y)
             end if
         next y
@@ -108,7 +92,6 @@ sub createGliderAt(x as ubyte, y as ubyte)
     let _grid(x + 2, y + 2) = CELL_BORN
 end sub
 
-initialiseGrid()
 createGliderAt(0, 0)
 createGliderAt(5, 5)
 createGliderAt(10, 10)
