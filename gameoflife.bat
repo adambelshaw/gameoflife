@@ -1,0 +1,1 @@
+zcc +zx -vn -startup=1 -clib=sdcc_iy @main.lst -o main.bin -create-app
