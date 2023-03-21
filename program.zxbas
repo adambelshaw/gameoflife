@@ -1,5 +1,7 @@
 const GRID_WIDTH as ubyte = 31 ' 31 character columns available
 const GRID_HEIGHT as ubyte = 22 ' 22 character rows available
+const MAX_UPDATED_CELLS as ubyte = 50
+const MAX_ACTIVE_CELLS as ubyte = 200
 
 ' possible cell states stored in _grid
 const CELL_DEAD as ubyte = 0 ' cell was dead, still is dead
@@ -10,36 +12,58 @@ const CELL_DIES as ubyte = 3 ' cell was alive, is not dead
 const CELL_ACTIVE as ubyte = 4
 
 dim _grid(GRID_WIDTH, GRID_HEIGHT) as ubyte
+dim _updatedCellCount as uinteger = 0
+dim _updatedCells(MAX_UPDATED_CELLS) as uinteger
+dim _activeCellCount as uinteger = 0
+dim _activeCells(MAX_ACTIVE_CELLS) as uinteger
+
+function getCellLocation(x as ubyte, y as ubyte) as uinteger
+    dim cellLocation as uinteger = GRID_WIDTH
+    let cellLocation = cellLocation * y
+    let cellLocation = cellLocation + x + 1
+    return cellLocation
+end function
+
+function getCellXCoord(cellLocation as uinteger) as ubyte
+    return (cellLocation mod GRID_WIDTH) - 1
+end function
+
+function getCellYCoord(cellLocation as uinteger) as ubyte
+    return cellLocation / GRID_WIDTH
+end function
 
 sub drawGrid()
-    dim x as ubyte = 0
-    dim y as ubyte = 0
-    dim x2 as byte = 0
-    dim y2 as byte = 0
-    for x = 0 to GRID_WIDTH step 1
-        for y = 0 to GRID_HEIGHT step 1
-            if (_grid(x, y) mod CELL_ACTIVE = CELL_BORN or _grid(x, y) mod CELL_ACTIVE = CELL_DIES) then                
-                ' update UI and move cell to settled state for next iteration
-                if (_grid(x, y) mod CELL_ACTIVE = CELL_BORN) then                
-                    print at y, x; "\::"
-                    let _grid(x, y) = CELL_LIVES
-                else if (_grid(x, y) mod CELL_ACTIVE = CELL_DIES) then
-                    print at y, x; " "
-                    let _grid(x, y) = CELL_DEAD
-                end if 
-                ' cell has changed so mark its neighbours as active
-                for x2 = x - 1 to x + 1 step 1
-                    if (x2 >= 0 and x2 <= GRID_WIDTH) then
-                        for y2 = y - 1 to y + 1 step 1
-                            if (y2 >= 0 and y2 <= GRID_HEIGHT and (x2 <> x or y2 <> y) and _grid(x2, y2) < CELL_ACTIVE) then
-                                let _grid(x2, y2) = _grid(x2, y2) + CELL_ACTIVE
-                            end if
-                        next y2
+    let _activeCellCount = 0
+    dim i as uinteger = 0    
+    for i = 0 to _updatedCellCount step 1
+        dim cellLocation as uinteger = _updatedCells(i)
+        dim x as ubyte = getCellXCoord(cellLocation)
+        dim y as ubyte = getCellYCoord(cellLocation)
+
+        ' update UI and move cell to settled state for next iteration
+        if (_grid(x, y) mod CELL_ACTIVE = CELL_BORN) then                
+            print at y, x; "\::"
+            let _grid(x, y) = CELL_LIVES
+        else if (_grid(x, y) mod CELL_ACTIVE = CELL_DIES) then
+            print at y, x; " "
+            let _grid(x, y) = CELL_DEAD
+        end if 
+
+        ' cell has changed so mark its neighbours as active
+        dim x2 as byte = 0    
+        dim y2 as byte = 0
+        for x2 = x - 1 to x + 1 step 1
+            if (x2 >= 0 and x2 <= GRID_WIDTH) then
+                for y2 = y - 1 to y + 1 step 1
+                    if (y2 >= 0 and y2 <= GRID_HEIGHT and (x2 <> x or y2 <> y) and _grid(x2, y2) < CELL_ACTIVE and _activeCellCount < MAX_ACTIVE_CELLS) then
+                        let _activeCells(_activeCellCount) = getCellLocation(x2, y2)
+                        let _activeCellCount = _activeCellCount + 1
+                        let _grid(x2, y2) = _grid(x2, y2) + CELL_ACTIVE
                     end if
-                next x2
-            end if      
-        next y
-    next x
+                next y2
+            end if
+        next x2
+    next i
 end sub
 
 function wasCellAlive(x as ubyte, y as ubyte) as ubyte
@@ -75,21 +99,34 @@ function getCellState(x as ubyte, y as ubyte) as ubyte
 end function
 
 sub iterateGrid()
-    for x = 0 to GRID_WIDTH step 1
-        for y = 0 to GRID_HEIGHT step 1
-            if (_grid(x, y) >= CELL_ACTIVE) then
-                let _grid(x, y) = getCellState(x, y)
-            end if
-        next y
-    next x    
+    let _updatedCellCount = 0
+    dim i as uinteger = 0
+    for i = 0 to _activeCellCount step 1
+        dim cellLocation as uinteger = _activeCells(i)
+        dim x as ubyte = getCellXCoord(cellLocation)
+        dim y as ubyte = getCellYCoord(cellLocation)
+        let _grid(x, y) = getCellState(x, y)
+        if ((_grid(x, y) = CELL_BORN or _grid(x, y) = CELL_DIES) and _updatedCellCount < MAX_UPDATED_CELLS) then
+            let _updatedCells(_updatedCellCount) = cellLocation
+            let _updatedCellCount = _updatedCellCount + 1
+        end if
+    next i  
+end sub
+
+sub addCell(x as ubyte, y as ubyte)
+    if (_updatedCellCount < MAX_UPDATED_CELLS) then
+        let _grid(x, y) = CELL_BORN
+        let _updatedCells(_updatedCellCount) = getCellLocation(x, y)
+        let _updatedCellCount = _updatedCellCount + 1
+    end if
 end sub
 
 sub createGliderAt(x as ubyte, y as ubyte)
-    let _grid(x + 1, y) = CELL_BORN
-    let _grid(x + 2, y + 1) = CELL_BORN
-    let _grid(x, y + 2) = CELL_BORN
-    let _grid(x + 1, y + 2) = CELL_BORN
-    let _grid(x + 2, y + 2) = CELL_BORN
+    addCell(x + 1, y)
+    addCell(x + 2, y + 1)
+    addCell(x, y + 2)
+    addCell(x + 1, y + 2)
+    addCell(x + 2, y + 2)
 end sub
 
 createGliderAt(0, 0)

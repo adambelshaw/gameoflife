@@ -116,7 +116,7 @@ void iterateGrid()
         unsigned char x = getCellXCoord(cellLocation);
         unsigned char y = getCellYCoord(cellLocation);
         _grid[x][y] = getCellState(x, y);
-        if (_grid[x][y] == CELL_BORN || _grid[x][y] == CELL_DIES && _updatedCellCount < MAX_UPDATED_CELLS) {
+        if ((_grid[x][y] == CELL_BORN || _grid[x][y] == CELL_DIES) && _updatedCellCount < MAX_UPDATED_CELLS) {
             _updatedCells[_updatedCellCount++] = cellLocation;
         }
     }
