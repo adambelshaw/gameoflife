@@ -1,19 +1,14 @@
-#include <stdio.h>
-#include <arch/zx.h>
+#include "screen.h"
+#include "grid.h"
 
-#define GRID_WIDTH 31
-#define COMPRESSED_GRID_WIDTH 16 // half of GRID_WIDTH rounded up to next even number
-#define GRID_HEIGHT 22
 #define MAX_UPDATED_CELLS 50
 #define MAX_ACTIVE_CELLS 200
 
-// possible cell states stored in _grid
 #define CELL_ALIVE 0 // cell is currently alive
 #define CELL_BORN 1 // cell has just been born
 #define CELL_DIES 2 // cell has just died
 #define CELL_ACTIVE 3 // cell neighbours an updated cell
 
-unsigned char _grid[COMPRESSED_GRID_WIDTH][GRID_HEIGHT];
 unsigned int _updatedCellCount = 0;
 unsigned int _updatedCells[MAX_UPDATED_CELLS];
 unsigned int _activeCellCount = 0;
@@ -38,79 +33,33 @@ unsigned char clearBit(unsigned char ch, unsigned char i)
     return ch & mask;
 }
 
-unsigned char getGridValue(unsigned char x, unsigned char y)
-{
-    unsigned char gridValue = _grid[x / 2][y];
-    if (x % 2 != 0) {        
-        gridValue = gridValue >> 4; // rotate the last 4 bits to the first 4
-    } else {        
-        gridValue = gridValue & 15; // blank out the last 4 bits
-    }
-
-    return gridValue;
-}
-
-void setGridValue(unsigned char x, unsigned char y, unsigned char value)
-{   
-    unsigned char gridValue = _grid[x / 2][y]; 
-    if (x % 2 != 0) {
-        value = value << 4; // rotate the first 4 bits to the last 4        
-        gridValue = gridValue & 15; // blank out last 4 bits of grid value
-    } else {        
-        value = value & 15; // blank out the last 4 bits so we don't overwrite        
-        gridValue = gridValue & 240; // blank out first 4 bits of grid value
-    }
-    
-    gridValue = gridValue | value;
-    _grid[x / 2][y] = gridValue;
-}
-
-unsigned int getCellLocation(unsigned char x, unsigned char y)
-{
-    unsigned int cellLocation = 0;
-    cellLocation = GRID_WIDTH * y;
-    cellLocation += x + 1;
-    return cellLocation;
-}
-
-unsigned char getCellXCoord(unsigned int cellLocation)
-{
-    return (cellLocation % GRID_WIDTH) - 1;
-}
-
-unsigned char getCellYCoord(unsigned int cellLocation)
-{
-    return cellLocation / GRID_WIDTH;
-}
-
 void drawGrid()
 {
+    // draw grid and update active cells for update method
     _activeCellCount = 0;
-
     unsigned int i = 0;
     for (i = 0; i < _updatedCellCount; i++) {
 
         unsigned int cellLocation = _updatedCells[i];
         unsigned char x = getCellXCoord(cellLocation);
         unsigned char y = getCellYCoord(cellLocation);
-
         unsigned char gridValue = getGridValue(x, y);
-        if (isBitSet(gridValue, CELL_BORN)) {
-            printf("\x16\%c\%c0", x + 1, y + 1);
+        if (isBitSet(gridValue, CELL_ALIVE)) {
+            printBlock(x, y);
             gridValue = clearBit(gridValue, CELL_BORN);
-            setGridValue(x, y, gridValue);
-        } else if (isBitSet(gridValue, CELL_DIES)) {
-            printf("\x16\%c\%c ", x + 1, y + 1);
+        } else {
+            clearBlock(x, y);
             gridValue = clearBit(gridValue, CELL_DIES);
-            setGridValue(x, y, gridValue);
+            
         }
+        setGridValue(x, y, gridValue);
 
         int x2 = 0;
         int y2 = 0;
         for (x2 = x - 1; x2 <= x + 1; x2++) {
             if (x2 >= 0 && x2 < GRID_WIDTH) {
                 for (y2 = y - 1; y2 <= y + 1; y2++) {
-                    gridValue = getGridValue(x2, y2);
+                    unsigned char gridValue = getGridValue(x2, y2);
                     if (y2 >= 0 && y2 < GRID_HEIGHT && (x2 != x || y2 != y) && !isBitSet(gridValue, CELL_ACTIVE) && _activeCellCount < MAX_ACTIVE_CELLS) {
                         _activeCells[_activeCellCount++] = getCellLocation(x2, y2);
                         gridValue = setBit(gridValue, CELL_ACTIVE);
@@ -162,9 +111,9 @@ unsigned char updateCellState(unsigned char x, unsigned char y)
 }
 
 void iterateGrid()
-{
+{    
+    // update grid and populate updated cells for draw method
     _updatedCellCount = 0;
-
     unsigned int i = 0;
     for (i = 0; i < _activeCellCount; i++) {
         unsigned int cellLocation = _activeCells[i];
@@ -197,8 +146,9 @@ void createGliderAt(unsigned char x, unsigned char y)
 }
 
 void main()
-{   
-    zx_cls(PAPER_WHITE);
+{
+    clearScreen();
+    printStr(6, 3, "Welcome to ZX Life!");
     _updatedCellCount = 0;
     createGliderAt(0, 0);
     createGliderAt(5, 5);
