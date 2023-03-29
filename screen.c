@@ -1,20 +1,18 @@
 #include <arch/zx.h>
 
-// graphics
-const unsigned char _block_udg[] = {
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b11111111
+static const unsigned char _cell_udg[] = {
+    0b10101010,
+    0b01010101,
+    0b10101010,
+    0b01010101,
+    0b10101010,
+    0b01010101,
+    0b10101010,
+    0b01010101,
 };
-const unsigned char _blank_udg[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-unsigned char *_font = (unsigned char *)(15360); // point font into rom character set
+static unsigned char *_font = (unsigned char *)(15360); // point font into rom character set
 
-void printChr(unsigned char x, unsigned char y, unsigned char* c)
+static void printChrAt(unsigned char x, unsigned char y, unsigned char* c)
 {
     unsigned char *p;
     unsigned char i;
@@ -26,28 +24,25 @@ void printChr(unsigned char x, unsigned char y, unsigned char* c)
     }
 }
 
-void printBlock(unsigned char x, unsigned char y)
+void printBlockAt(unsigned char x, unsigned char y, unsigned char ink)
 {
-    printChr(x, y, _block_udg);
+    *zx_cxy2aaddr(x, y) = ink | (ink * 8) | BRIGHT;
 }
 
-void clearBlock(unsigned char x, unsigned char y)
+void printCellAt(unsigned char x, unsigned char y, unsigned char ink)
 {
-    printChr(x, y, _blank_udg);
+    *zx_cxy2aaddr(x, y) = ink | PAPER_WHITE;
+    printChrAt(x, y, _cell_udg);
 }
 
-void printStr(unsigned char x, unsigned char y, unsigned char *s)
+void clearCellAt(unsigned char x, unsigned char y)
 {
-   unsigned char c;
-   while (c = *s++)
-   {
-      printChr(x, y, _font + c*8);
-      if (++x == 32)
-      {
-         x = 0;
-         y++;
-      }
-   }
+    *zx_cxy2aaddr(x, y) = INK_WHITE | PAPER_WHITE;
+}
+
+unsigned char* getGlyphFromChr(unsigned char c)
+{
+    return _font + (c * 8);
 }
 
 void clearScreen()

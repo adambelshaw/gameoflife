@@ -2,7 +2,7 @@
 
 #define COMPRESSED_GRID_WIDTH 16 // half of GRID_WIDTH rounded up to next even number
 
-unsigned char _grid[COMPRESSED_GRID_WIDTH][GRID_HEIGHT];
+static unsigned char _grid[COMPRESSED_GRID_WIDTH][GRID_HEIGHT];
 
 unsigned char getGridValue(unsigned char x, unsigned char y)
 {
@@ -29,22 +29,4 @@ void setGridValue(unsigned char x, unsigned char y, unsigned char value)
     
     gridValue = gridValue | value;
     _grid[x / 2][y] = gridValue;
-}
-
-unsigned int getCellLocation(unsigned char x, unsigned char y)
-{
-    unsigned int cellLocation = 0;
-    cellLocation = GRID_WIDTH * y;
-    cellLocation += x + 1;
-    return cellLocation;
-}
-
-unsigned char getCellXCoord(unsigned int cellLocation)
-{
-    return (cellLocation % GRID_WIDTH) - 1;
-}
-
-unsigned char getCellYCoord(unsigned int cellLocation)
-{
-    return cellLocation / GRID_WIDTH;
 }
