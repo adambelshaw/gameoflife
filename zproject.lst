@@ -1,3 +1,4 @@
+screen_cell_sprite.asm
 screen.c
 grid.c
 game.c

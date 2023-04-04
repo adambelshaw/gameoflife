@@ -1,21 +1,12 @@
 #include <arch/zx.h>
 
-static const unsigned char _cell_udg[] = {
-    0b10101010,
-    0b01010101,
-    0b10101010,
-    0b01010101,
-    0b10101010,
-    0b01010101,
-    0b10101010,
-    0b01010101,
-};
-static unsigned char *_font = (unsigned char *)(15360); // point font into rom character set
+extern uint8_t cell_sprite[];
+static uint8_t *font = (uint8_t *)(15360); // point font into rom character set
 
-static void printChrAt(unsigned char x, unsigned char y, unsigned char* c)
+static void print_chr_at(uint8_t x, uint8_t y, uint8_t *c)
 {
-    unsigned char *p;
-    unsigned char i;
+    uint8_t *p;
+    uint8_t i;
     p = zx_cxy2saddr(x, y);
     for (i = 0; i < 8; ++i)
     {
@@ -24,28 +15,29 @@ static void printChrAt(unsigned char x, unsigned char y, unsigned char* c)
     }
 }
 
-void printBlockAt(unsigned char x, unsigned char y, unsigned char ink)
+void print_block_at(uint8_t x, uint8_t y, uint8_t ink)
 {
     *zx_cxy2aaddr(x, y) = ink | (ink * 8) | BRIGHT;
 }
 
-void printCellAt(unsigned char x, unsigned char y, unsigned char ink)
+void print_cell_at(uint8_t x, uint8_t y, uint8_t ink)
 {
     *zx_cxy2aaddr(x, y) = ink | PAPER_WHITE;
-    printChrAt(x, y, _cell_udg);
+    print_chr_at(x, y, cell_sprite);
 }
 
-void clearCellAt(unsigned char x, unsigned char y)
+void clear_cell_at(uint8_t x, uint8_t y)
 {
     *zx_cxy2aaddr(x, y) = INK_WHITE | PAPER_WHITE;
 }
 
-unsigned char* getGlyphFromChr(unsigned char c)
+uint8_t *get_glyph_from_chr(uint8_t c)
 {
-    return _font + (c * 8);
+    return font + (c * 8);
 }
 
-void clearScreen()
+void clear_screen()
 {
+    zx_border(INK_WHITE);
     zx_cls(PAPER_WHITE);
 }
