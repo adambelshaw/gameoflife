@@ -1,15 +1,15 @@
 #include "game.h"
 #include "screen.h"
-#include <stdio.h>
+
+// imported from get_message.asm
+extern void get_message() __z88dk_callee;
+extern uint8_t message[];
 
 void main()
 {
-    uint8_t message[50];
-
     clear_screen();
-    printf("Welcome To ZX Life!\n\n");
-    printf("Please enter message to display,maximum 50 characters:\n\n");
-    fgets(message, 50, stdin);
+
+    get_message();
 
     uint8_t message_index = 0;
     uint16_t updated_cell_count = 0;

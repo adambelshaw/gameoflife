@@ -1,3 +1,4 @@
+get_message.asm
 screen_cell_sprite.asm
 screen.c
 grid.c
