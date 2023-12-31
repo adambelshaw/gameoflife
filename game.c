@@ -1,6 +1,14 @@
 #include "screen.h"
 #include "grid.h"
 
+#define GRID_WIDTH 31
+#define GRID_HEIGHT 22
+
+#define CELL_ALIVE 0  // cell is currently alive
+#define CELL_BORN 1   // cell has just been born
+#define CELL_DIES 2   // cell has just died
+#define CELL_ACTIVE 3 // cell neighbours an updated cell
+
 #define MAX_ACTIVE_CELLS 255
 
 static uint16_t updated_cell_count = 0;

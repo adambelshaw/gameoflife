@@ -1,4 +1,4 @@
-Code repository for blog post series: https://belmeister.hashnode.dev/series/zx-life
+Code repository for blog post series: https://belmeister.hashnode.dev/series/zx-life and https://belmeister.hashnode.dev/series/micro-optimisation
 
 Download the .TAP file from: https://belmeister.itch.io/zx-life
 
