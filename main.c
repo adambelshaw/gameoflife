@@ -1,14 +1,16 @@
 #include "game.h"
 #include "screen.h"
 
-// imported from get_message.asm
+// imported from main.asm
+extern uint8_t message_prompt[];
 extern void get_message() __z88dk_callee;
 extern uint8_t message[];
 
 void main()
 {
+    load_graphics();
     clear_screen();
-
+    print_string(message_prompt);
     get_message();
 
     uint8_t message_index = 0;

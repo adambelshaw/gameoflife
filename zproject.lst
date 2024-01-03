@@ -1,7 +1,7 @@
-get_message.asm
-screen_cell_sprite.asm
+screen.asm
 screen.c
 grid.asm
 grid.c
 game.c
+main.asm
 main.c

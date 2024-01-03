@@ -13,12 +13,11 @@ SECTION code_user
 PUBLIC _get_message
 ;----------
 ; _get_message
-; prompts user and populates _message
+; reads keyboard for message to display, populating _message
 ; alters: af, bc, de, hl
 ;----------
 _get_message:
-        ld   hl, message_prompt
-        call print_string        
+        ; extern void get_message() __z88dk_callee;
         ld   hl, _message   ; hl = address of message
         ld   (hl), $00        
         ld   d, $00         ; d = tracks the mssage length
@@ -67,19 +66,6 @@ get_message_enter:
         ret                 ; exit with populated message
 
 ;----------
-; print_string
-; inputs: hl = first position of a null ($00) terminated string
-; alters: af, hl
-;----------
-print_string:
-        ld   a, (hl)        ; a = character to be printed
-        or   a              ; sets z register if 0
-        ret  z              ; return if z register set
-        rst  $10            ; prints the character
-        inc  hl             ; hl = next character
-        jr   print_string   ; loop
-
-;----------
 ; wait_key
 ; outputs: a = ASCII code of the next pressed key
 ; alters: af, hl
@@ -126,5 +112,6 @@ PUBLIC _message
 _message: ds MAX_MSG_LENGTH+1
 
 SECTION rodata_user
-message_prompt:
+PUBLIC _message_prompt
+_message_prompt:
 db "Welcome To ZX Life!", KEYENT, KEYENT, "Please enter message to display,maximum 50 characters:", KEYENT, KEYENT, $00

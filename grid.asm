@@ -6,7 +6,7 @@ SECTION code_user
 
 PUBLIC _get_grid_value_asm
 ;----------
-; get_grid_value
+; get_grid_value_asm
 ; inputs: b = y, c = x
 ; outputs: hl = grid value
 ; alters: a, bc, de, hl
@@ -35,7 +35,7 @@ _get_grid_value_asm_end:
 
 PUBLIC _set_grid_value_asm
 ;----------
-; set_grid_value
+; set_grid_value_asm
 ; inputs: b = y, c = x, e = grid value
 ; alters: a, bc, de, hl
 ;----------
