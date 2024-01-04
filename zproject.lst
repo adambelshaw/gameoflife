@@ -1,6 +1,5 @@
-screen.asm
+game.asm
 screen.c
-grid.asm
 grid.c
 game.c
 main.asm

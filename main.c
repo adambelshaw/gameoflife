@@ -2,20 +2,20 @@
 #include "screen.h"
 
 // imported from main.asm
-extern uint8_t message_prompt[];
-extern void get_message() __z88dk_callee;
-extern uint8_t message[];
+extern unsigned char message_prompt[];
+extern void get_message_asm() __z88dk_callee;
+extern unsigned char message[];
 
 void main()
 {
     clear_screen();
     print_string(message_prompt);
-    get_message();
+    get_message_asm();
 
-    uint8_t message_index = 0;
-    uint16_t updated_cell_count = 0;
-    uint8_t ink = 0;
-    uint8_t count = 0;
+    unsigned char message_index = 0;
+    unsigned char updated_cell_count = 0;
+    unsigned char ink = 0;
+    unsigned char count = 0;
     clear_screen();
     while (1)
     {
@@ -28,7 +28,7 @@ void main()
                 message_index = 0;
                 ink = 1;
             }
-            uint8_t c = message[message_index++];
+            unsigned char c = message[message_index++];
             if (c == ' ')
             {
                 c = '_';

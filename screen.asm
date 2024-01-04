@@ -124,21 +124,6 @@ _print_block_at_asm:
             call print_char_at
             ret
 
-PUBLIC _get_glyph_from_chr_asm
-;----------
-; get_glyph_from_chr_asm
-; inputs: l = character
-; outputs: hl = pointer to glyph
-; alters: hl
-;----------
-_get_glyph_from_chr_asm:
-            ld h, $00 ; make sure h is 00
-            add hl, hl
-            add hl, hl
-            add hl, hl ; h *= 8
-            add hl, $3C00 ; add start of character fonts
-            ret
-
 ;----------
 ; get_char_address
 ; inputs: h = y, l = x
@@ -147,18 +132,18 @@ _get_glyph_from_chr_asm:
 ;----------
 get_char_address:
             ld a,h
-			and $07
-			rra
-			rra
-			rra
-			rra
-			or l
-			ld l,a
-			ld a,h
-			and $18
-			or $40
-			ld h,a
-			ret	
+            and $07
+            rra
+            rra
+            rra
+            rra
+            or l
+            ld l,a
+            ld a,h
+            and $18
+            or $40
+            ld h,a
+            ret	
 
 ;----------
 ; get_attr_address
@@ -186,31 +171,31 @@ get_attr_address:
 SECTION rodata_user
 
 cell_sprite:
-	defb @10101010
-	defb @01010101
-	defb @10101010
-	defb @01010101
-	defb @10101010
-	defb @01010101
-	defb @10101010
-	defb @01010101
+            defb @10101010
+            defb @01010101
+            defb @10101010
+            defb @01010101
+            defb @10101010
+            defb @01010101
+            defb @10101010
+            defb @01010101
 
 block_sprite:
-    defb @11111111
-    defb @11111111
-    defb @11111111
-    defb @11111111
-    defb @11111111
-    defb @11111111
-    defb @11111111
-    defb @11111111
+            defb @11111111
+            defb @11111111
+            defb @11111111
+            defb @11111111
+            defb @11111111
+            defb @11111111
+            defb @11111111
+            defb @11111111
 
 clear_sprite:
-    defb @00000000
-    defb @00000000
-    defb @00000000
-    defb @00000000
-    defb @00000000
-    defb @00000000
-    defb @00000000
-    defb @00000000
+            defb @00000000
+            defb @00000000
+            defb @00000000
+            defb @00000000    
+            defb @00000000
+            defb @00000000
+            defb @00000000
+            defb @00000000

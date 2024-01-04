@@ -1,5 +1,3 @@
-#include <z80.h>
-
-void draw_grid(uint8_t ink);
-uint16_t iterate_grid();
-void draw_chr_at(uint8_t x, uint8_t y, uint8_t c);
+void draw_grid(unsigned char ink);
+unsigned char iterate_grid();
+void draw_chr_at(unsigned char x, unsigned char y, unsigned char c);

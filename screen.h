@@ -1,8 +1,6 @@
-#include <z80.h>
-
-void print_string(uint8_t *string);
+void print_string(unsigned char *string);
 void clear_screen();
-void clear_cell_at(uint8_t x, uint8_t y);
-void print_cell_at(uint8_t x, uint8_t y, uint8_t ink);
-void print_block_at(uint8_t x, uint8_t y, uint8_t ink);
-uint8_t *get_glyph_from_chr(uint8_t c);
+void clear_cell_at(unsigned char x, unsigned char y);
+void print_cell_at(unsigned char x, unsigned char y, unsigned char ink);
+void print_block_at(unsigned char x, unsigned char y, unsigned char ink);
+unsigned char *get_glyph_from_chr(unsigned char c);
