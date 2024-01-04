@@ -1,6 +1,5 @@
 #include <z80.h>
 
-void load_graphics();
 void print_string(uint8_t *string);
 void clear_screen();
 void clear_cell_at(uint8_t x, uint8_t y);

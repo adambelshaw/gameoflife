@@ -1,22 +1,9 @@
-; CONSTANTS
-UDG: equ $5c7b ; RAM address of user defined graphics
 VIDEORAM: equ $4000 ; address of video RAM
 VIDEORAM_L: equ $1800 ; length of video RAM
 VIDEOATT: equ $5800 ; address of attribute RAM
 VIDEOATT_L: equ $0300 ; length of attribute RAM
-LOCATE: equ $0dd9 ; ROM address for AT routine to position the cursor
 
 SECTION code_user
-
-PUBLIC _load_graphics_asm
-;----------
-; load_graphics_asm
-; alters: hl
-;----------
-_load_graphics_asm:
-            ld hl, cell_sprite ; load cell sprite location
-            ld (UDG), hl ; load as first UDG
-            ret
 
 PUBLIC _print_string_asm
 ;----------
@@ -64,14 +51,14 @@ _clear_cell_at_asm:
             pop hl ; hl = ret address
             pop de ; d = y, e = x
             push hl ; ret address back on stack
-            call convert_x_y_coords
-            call LOCATE ; call LOCATE ROM routine
-            ld a, $13 ; control code for set bright
-            rst $10 ; call PRINT ROM routine
-            ld a, 0 ; bright value
-            rst $10
-            ld a, ' ' ; clear
-            rst $10
+
+            call get_attr_address
+            ld (hl), @00111000 ; paper white
+
+            ex de, hl ; h = y, l = x
+            call get_char_address
+            ld de, clear_sprite ; h = y, l = x, de = address of glyph
+            call print_char_at
             ret
 
 PUBLIC _print_cell_at_asm
@@ -86,20 +73,31 @@ _print_cell_at_asm:
             pop de ; d = y, e = x
             pop bc ; c = ink
             push hl ; ret address back on stack
-            push bc ; store bc (ink)
-            call convert_x_y_coords
-            call LOCATE ; call LOCATE ROM routine
-            pop bc ; retrieve bc (ink)
-            ld a, $10 ; control code for set ink
-            rst $10 ; call PRINT ROM routine
-            ld a, c ; ink value            
-            rst $10
-            ld a, $13 ; control code for set bright
-            rst $10
-            ld a, 0 ; bright value
-            rst $10
-            ld a, $90 ; cell UDG stored at $90
-            rst $10 ; print
+
+            call get_attr_address
+            ld a, c ; a = ink
+            or @00111000 ; paper white
+            ld (hl), a ; set attribute value
+
+            ex de, hl ; h = y, l = x
+            call get_char_address
+            ld de, cell_sprite ; h = y, l = x, de = address of glyph
+            call print_char_at
+            ret
+
+;----------
+; print_char_at
+; inputs: h = y, l = x, de = location of char
+; alters: a, bc, de, hl
+;----------
+print_char_at:
+            ld b, 8 ; loop counter
+print_char_at_loop:
+            ld a, (de) ; get the byte
+            ld (hl), a ; print to screen
+            inc de ; goto next byte of character
+            inc h ; goto next line of screen
+            djnz print_char_at_loop ; loop 8 times
             ret
 
 PUBLIC _print_block_at_asm
@@ -114,43 +112,16 @@ _print_block_at_asm:
             pop de ; d = y, e = x
             pop bc ; c = ink
             push hl ; ret address back on stack
-            push bc ; store bc (ink)
-            call convert_x_y_coords            
-            call LOCATE ; call LOCATE ROM routine
-            pop bc ; retrieve bc (ink)
-            ld a, $10 ; control code for set ink
-            rst $10 ; call PRINT ROM routine
-            ld a, c ; ink value            
-            rst $10
-            ld a, $13 ; control code for set bright
-            rst $10
-            ld a, 1 ; bright value
-            rst $10
-            ld a, $8F ; print block
-            rst $10
-            ret
-
-;----------
-; convert_x_y_coords
-; inputs: d = y, e = x (top left is 0,0)
-; outputs: b = y, c = x (top left is 24,33 - as expected by ROM AT)
-; alters: a, bc, de
-;----------
-convert_x_y_coords:
-            ld a, $18
-            ld b, d
-convert_x_y_coords_y_loop:
-            dec a
-            djnz convert_x_y_coords_y_loop  
-            ld d, a ; y = $18-y
-            ld a, $21
-            ld b, e
-convert_x_y_coords_x_loop:
-            dec a
-            djnz convert_x_y_coords_x_loop  
-            ld e, a ; x = $21-x
-            ld b, d ; b = y
-            ld c, e ; c = x
+            
+            call get_attr_address
+            ld a, c ; a = ink
+            or @01111000 ; paper white, bright
+            ld (hl), a ; set attribute value
+            
+            ex de, hl ; h = y, l = x
+            call get_char_address
+            ld de, block_sprite ; h = y, l = x, de = address of glyph
+            call print_char_at
             ret
 
 PUBLIC _get_glyph_from_chr_asm
@@ -168,6 +139,50 @@ _get_glyph_from_chr_asm:
             add hl, $3C00 ; add start of character fonts
             ret
 
+;----------
+; get_char_address
+; inputs: h = y, l = x
+; outputs: hl = location of screen address
+; alters: hl
+;----------
+get_char_address:
+            ld a,h
+			and $07
+			rra
+			rra
+			rra
+			rra
+			or l
+			ld l,a
+			ld a,h
+			and $18
+			or $40
+			ld h,a
+			ret	
+
+;----------
+; get_attr_address
+; inputs: d = y, e = x
+; outputs: hl = location of attribute address
+; alters: hl
+;----------
+get_attr_address:
+            ld a,d
+            rrca
+            rrca
+            rrca
+            ld l,a
+            and $03
+            add a, $58
+            ld h,a
+            ld a,l
+            and $E0
+            ld l,a
+            ld a,e
+            add a,l
+            ld l,a
+            ret
+
 SECTION rodata_user
 
 cell_sprite:
@@ -179,3 +194,23 @@ cell_sprite:
 	defb @01010101
 	defb @10101010
 	defb @01010101
+
+block_sprite:
+    defb @11111111
+    defb @11111111
+    defb @11111111
+    defb @11111111
+    defb @11111111
+    defb @11111111
+    defb @11111111
+    defb @11111111
+
+clear_sprite:
+    defb @00000000
+    defb @00000000
+    defb @00000000
+    defb @00000000
+    defb @00000000
+    defb @00000000
+    defb @00000000
+    defb @00000000

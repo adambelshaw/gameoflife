@@ -8,7 +8,6 @@ extern uint8_t message[];
 
 void main()
 {
-    load_graphics();
     clear_screen();
     print_string(message_prompt);
     get_message();
