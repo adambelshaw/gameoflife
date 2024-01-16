@@ -4,8 +4,6 @@ GRID_HEIGHT: equ $17 ; 23
 GRID_WIDTH: equ $1f ; 31
 MAX_ACTIVE_CELLS: equ $ff ; 255
 
-SECTION code_user
-
 ;----------
 ; get_grid_value
 ; inputs: d = y, e = x
@@ -107,7 +105,7 @@ get_cell_location_loop:
             djnz get_cell_location_loop
             ld e, c ; de - x
             add hl, de
-            add hl, 1 ; hl = (y * GRID_WIDTH) + x + 1
+            inc hl
             ret
 
 ;----------
@@ -123,7 +121,8 @@ get_cell_x_coord:
             ld a, $10    ; loop counter
 get_cell_x_coord_loop:
             ; shift the bits from bc (numerator) into hl (accumulator)
-            sla c \ rl b
+            sla c
+            rl b
             adc hl,hl
             ; check if remainder >= denominator (hl>=de)
             sbc hl,de
@@ -153,7 +152,8 @@ get_cell_y_coord:
             ld a, $10 ; loop counter
 get_cell_y_coord_loop:
             ; shift the bits from bc (numerator) into hl (accumulator)
-            sla c \ rl b
+            sla c
+            rl b
             adc hl, hl
             ; check if remainder >= denominator (hl>=de)
             sbc hl, de
@@ -170,9 +170,8 @@ get_cell_y_coord_loop_done:
             ld l, c ; hl = cell_location / GRID_WIDTH
             ret
 
-SECTION data_user
 grid: ds COMPRESSED_GRID_WIDTH*GRID_HEIGHT
-updated_cell_count: ds 1, $00 ; extern uint8_t updated_cell_count;
-updated_cells: ds MAX_ACTIVE_CELLS*2, $00 ; extern uint16_t updated_cells[];
-active_cell_count: ds 1, $00 ; extern uint8_t active_cell_count;
-active_cells: ds MAX_ACTIVE_CELLS*2, $00 ; extern uint16_t active_cells[];
+updated_cell_count: ds 1, $00
+updated_cells: ds MAX_ACTIVE_CELLS*2, $00
+active_cell_count: ds 1, $00
+active_cells: ds MAX_ACTIVE_CELLS*2, $00

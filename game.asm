@@ -3,17 +3,14 @@ CELL_BORN: equ $01
 CELL_DIES: equ $02
 CELL_ACTIVE: equ $03
 
-SECTION code_user
-
-PUBLIC _draw_grid_asm
 ;----------
-; draw_grid_asm
-; inputs: e = ink
+; draw_grid
+; inputs: e = ink, d = paper
 ; alters: all registers
 ;----------
-_draw_grid_asm:
+draw_grid:
             pop hl ; hl = ret address
-            pop de ; e = ink
+            pop de ; e = ink, d = paper
             push hl ; ret address back on stack
 
             ld hl, active_cell_count
@@ -27,7 +24,7 @@ _draw_grid_asm:
             
             ld b, (hl) ; counter = updated_cell_count
             ld hl, updated_cells ; pointer to array
-_draw_grid_asm_loop:
+draw_grid_loop:
             push bc ; store counter
             ld c, (hl)
             inc hl
@@ -61,16 +58,14 @@ _draw_grid_asm_loop:
             
             ; bc = grid_value, d = y, e = x
             bit CELL_ALIVE, c ; is cell alive?
-            jr z, _draw_grid_asm_cell_dead ; no, goto cell_dead
+            jr z, draw_grid_cell_dead ; no, goto cell_dead
             bit CELL_BORN, c ; is cell born?
-            jr z, _draw_grid_asm_cell_block ; no, goto cell_block
+            jr z, draw_grid_cell_block ; no, goto cell_block
 
             ; born cells are generated, show as regular cells
             push bc ; store grid_value
             push de ; store x,y
             push hl ; store ink
-            push hl ; pass ink
-            push de ; pass x,y            
             call print_cell_at
             pop hl ; restore ink
             pop de ; restore x,y
@@ -78,47 +73,39 @@ _draw_grid_asm_loop:
             
             res CELL_BORN, c ; clear_bit
 
-            jr _draw_grid_asm_loop_end ; loop       
-_draw_grid_asm_cell_block:
+            jr draw_grid_loop_end ; loop       
+draw_grid_cell_block:
             ; added cells are alive without being born, show as block
             push bc ; store grid_value
             push de ; store x,y
             push hl ; store ink
-            push hl ; pass ink
-            push de ; pass x,y
             call print_block_at
             pop hl ; restore ink
             pop de ; restore x,y
             pop bc ; restore grid_value
 
-            jr _draw_grid_asm_loop_end ; loop       
-_draw_grid_asm_cell_dead:
+            jr draw_grid_loop_end ; loop       
+draw_grid_cell_dead:
             ; clear_cell
             push bc ; store grid_value
             push de ; store x,y
             push hl ; store ink
-            push de ; pass x,y
             call clear_cell_at
             pop hl ; restore ink
             pop de ; restore x,y
             pop bc ; restore grid_value
             
             res CELL_DIES, c ; clear_bit
-_draw_grid_asm_loop_end:
-            push de ; store x,y
+draw_grid_loop_end:
             push bc ; pass grid_value
             push de ; pass x,y
             call set_grid_value
-            pop de ; restore x,y
-
-            ; TODO - I should be able to call this inline but instead have had to create update_all_active_cells and use a push af/pop af
-            ;call update_active_cells
 
             pop de ; restore ink
             pop hl ; restore pointer
             pop bc ; restore counter
 
-            djnz _draw_grid_asm_loop
+            djnz draw_grid_loop
             call update_all_active_cells
             ret
 
@@ -146,8 +133,7 @@ update_all_active_cells_loop:
             pop de ; restore x, y
             ld d, l ; e = y
 
-            ; update_active_cells(x, y); 
-            push af ; TODO - breaks without this, why?
+            push af
             call update_active_cells
             pop af
 
@@ -246,26 +232,23 @@ update_active_cell:
             push de ; pass x,y
             call set_grid_value ; grid value updated
             pop de ; restore x,y
-
             ret
 
-PUBLIC _iterate_grid_asm
 ;----------
-; iterate_grid_asm
+; iterate_grid
 ; outputs: hl = updated_cell_count
 ; alters: all registers
 ;----------
-_iterate_grid_asm:
-            ; extern uint8_t iterate_grid() __z88dk_callee;
+iterate_grid:
             ld hl, updated_cell_count
             ld (hl), a ; reset updated_cell_count
             ld hl, active_cell_count
             ld a, (hl) ; a = active_cell_count
             cp $01
-            jr c, _iterate_grid_asm_end ; no active cells, end
+            jr c, iterate_grid_end ; no active cells, end
             ld b, a ; counter = active_cell_count
             ld hl, active_cells ; hl = pointer to active_cells
-_iterate_grid_asm_loop:
+iterate_grid_loop:
             ld e, (hl)
             inc hl
             ld d, (hl)
@@ -275,8 +258,8 @@ _iterate_grid_asm_loop:
             call update_cell_state
             pop bc ; restore counter
             pop hl ; restore pointer            
-            djnz _iterate_grid_asm_loop
-_iterate_grid_asm_end:
+            djnz iterate_grid_loop
+iterate_grid_end:
             ld hl, updated_cell_count
             ld e, (hl)
             ld d, $00
@@ -380,6 +363,7 @@ get_neighbour_count:
             ld h, $00
             ld l, b ; hl = neighbour count
             ret
+
 ;----------
 ; get_neighbour_count_counter
 ; inputs: d = y, e = x, b = current count
@@ -458,14 +442,12 @@ resolve_grid_value_was_dead:
             set CELL_BORN, l ; yes, cell is born
             ret
 
-PUBLIC _draw_chr_at_asm
 ;----------
-; draw_chr_at_asm
+; draw_chr_at
 ; inputs: d = y, e = x, bc = character code
 ; alters: a, bc, de, hl
 ;----------
-_draw_chr_at_asm:
-            ; extern void draw_chr_at_asm(uint8_t x, uint8_t y, uint16_t c) // last parameter uint16_t as crashes if odd number of 8 bits
+draw_chr_at:
             pop hl ; hl = ret address
             pop de ; d = y, e = x
             pop bc ; c = character code
@@ -477,18 +459,21 @@ _draw_chr_at_asm:
             add hl, hl
             add hl, hl
             add hl, hl ; h *= 8
-            add hl, $3C00 ; add start of character fonts, hl = address of glyph
+            push bc
+            ld bc, $3C00
+            add hl, bc ; add start of character fonts, hl = address of glyph
+            pop bc
 
             ld b, $08 ; 8 outer iterations
-_draw_chr_at_asm_outer_loop:
+draw_chr_at_outer_loop:
             ld c, b
             ld b, $08 ; 8 inner iteractions
             ld a, (hl) ; a = current row
             inc hl ; point hl at next row
-_draw_chr_at_asm_inner_loop:
+draw_chr_at_inner_loop:
 
             bit $00, a ; is bit set?
-            jr z, _draw_chr_at_asm_skip
+            jr z, draw_chr_at_skip
 
             push af
             push bc
@@ -498,10 +483,10 @@ _draw_chr_at_asm_inner_loop:
             ; resolve x and y location and add cell
             ld a, d ; a = x
             sub c ; a = x - x2
-            add $08 ; a = x - x2 + 8
+            add a, $08 ; a = x - x2 + 8
             ld d, a ; x = x - x2 + 8
             ld a, e ; a = y
-            add b ; a = y + y2
+            add a, b ; a = y + y2
             ld e, a ; y = y + y2
             call add_cell
 
@@ -509,11 +494,11 @@ _draw_chr_at_asm_inner_loop:
             pop de
             pop bc
             pop af ; restore registers
-_draw_chr_at_asm_skip:
+draw_chr_at_skip:
             rra ; rotate to next bit
-            djnz _draw_chr_at_asm_inner_loop
+            djnz draw_chr_at_inner_loop
             ld b, c
-            djnz _draw_chr_at_asm_outer_loop
+            djnz draw_chr_at_outer_loop
             ret
 
 ;----------
@@ -565,4 +550,4 @@ add_cell:
             ret
 
 include "grid.asm"
-include "screen.asm"
+include "output.asm"
