@@ -1,6 +1,3 @@
 game.asm
-screen.c
-grid.c
-game.c
 main.asm
 main.c

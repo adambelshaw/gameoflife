@@ -39,24 +39,21 @@ _draw_grid_asm_loop:
             push de ; store ink
             ; get x coord
             push bc ; store cell_location
-            push bc ; pass cell_location
-            call _get_cell_x_coord_asm ; hl = x coord
+            call get_cell_x_coord ; hl = x coord
             ld e, l ; e = x
             pop bc ; restore cell_location
 
             ; get y coord
             push de ; store x, y
             push bc ; store cell_location
-            push bc ; pass cell_location
-            call _get_cell_y_coord_asm ; hl = y coord
+            call get_cell_y_coord ; hl = y coord
             pop bc ; restore cell_location            
             pop de ; restore x, y
             ld d, l ; e = y            
 
             ; get grid value
             push de ; store x,y
-            push de ; pass x,y
-            call _get_grid_value_asm ; hl = grid_value
+            call get_grid_value ; hl = grid_value
             pop de ; restore x,y
             ld b, h
             ld c, l ; bc = grid_value
@@ -74,7 +71,7 @@ _draw_grid_asm_loop:
             push hl ; store ink
             push hl ; pass ink
             push de ; pass x,y            
-            call _print_cell_at_asm
+            call print_cell_at
             pop hl ; restore ink
             pop de ; restore x,y
             pop bc ; restore grid_value
@@ -89,7 +86,7 @@ _draw_grid_asm_cell_block:
             push hl ; store ink
             push hl ; pass ink
             push de ; pass x,y
-            call _print_block_at_asm
+            call print_block_at
             pop hl ; restore ink
             pop de ; restore x,y
             pop bc ; restore grid_value
@@ -101,7 +98,7 @@ _draw_grid_asm_cell_dead:
             push de ; store x,y
             push hl ; store ink
             push de ; pass x,y
-            call _clear_cell_at_asm
+            call clear_cell_at
             pop hl ; restore ink
             pop de ; restore x,y
             pop bc ; restore grid_value
@@ -111,7 +108,7 @@ _draw_grid_asm_loop_end:
             push de ; store x,y
             push bc ; pass grid_value
             push de ; pass x,y
-            call _set_grid_value_asm
+            call set_grid_value
             pop de ; restore x,y
 
             ; TODO - I should be able to call this inline but instead have had to create update_all_active_cells and use a push af/pop af
@@ -139,15 +136,13 @@ update_all_active_cells_loop:
 
             ; get x coord
             push bc ; store cell_location
-            push bc ; pass cell_location
-            call _get_cell_x_coord_asm ; hl = x coord
+            call get_cell_x_coord ; hl = x coord
             ld e, l ; e = x
             pop bc ; restore cell_location
 
             ; get y coord
             push de ; store x, y
-            push bc ; pass cell_location
-            call _get_cell_y_coord_asm ; hl = y coord
+            call get_cell_y_coord ; hl = y coord
             pop de ; restore x, y
             ld d, l ; e = y
 
@@ -209,8 +204,7 @@ update_active_cell:
 
             ; get grid value
             push de ; store x,y
-            push de ; pass x,y
-            call _get_grid_value_asm ; hl = grid_value
+            call get_grid_value ; hl = grid_value
             pop de ; restore x,y
             ld b, h
             ld c, l ; bc = grid_value
@@ -235,8 +229,7 @@ update_active_cell:
             pop de ; retrieve x,y
 
             push hl ; store pointer            
-            push de ; pass x and y
-            call _get_cell_location_asm ; hl = cell_location
+            call get_cell_location ; hl = cell_location
             ex de, hl ; de = cell_location            
             pop hl ; retrieve pointer
 
@@ -251,7 +244,7 @@ update_active_cell:
             push de ; store x,y
             push bc ; pass grid value
             push de ; pass x,y
-            call _set_grid_value_asm ; grid value updated
+            call set_grid_value ; grid value updated
             pop de ; restore x,y
 
             ret
@@ -302,15 +295,13 @@ update_cell_state:
             push bc ; store cell_location
 
             push bc ; store cell_location
-            push bc ; pass cell_location
-            call _get_cell_y_coord_asm ; hl = y coord
+            call get_cell_y_coord ; hl = y coord
             ld d, l ; d = y
             pop bc ; restore cell_location
 
             push de ; store x, y
             push bc ; store cell_location
-            push bc ; pass cell_location
-            call _get_cell_x_coord_asm ; hl = x coord            
+            call get_cell_x_coord ; hl = x coord            
             pop bc ; restore cell_location            
             pop de ; restore x, y
             ld e, l ; e = x
@@ -332,7 +323,7 @@ update_cell_state:
             push hl ; store grid value
             push hl ; pass grid value
             push de ; pass xy
-            call _set_grid_value_asm ; set grid value
+            call set_grid_value ; set grid value
             pop hl ; restore grid value
 
             pop de ; de = cell_location
@@ -419,8 +410,7 @@ get_neighbour_count_counter:
 ; alters: af, bc, de, hl
 ;----------
 was_cell_alive:                       
-            push de ; pass x and y            
-            call _get_grid_value_asm ; hl = grid value
+            call get_grid_value ; hl = grid value
             
             ld a, l ; a = grid value
             ld h, $00 ; 
@@ -552,11 +542,10 @@ add_cell:
             ld c, a ; bc = grid value
             push bc ; pass grid value first (last parameter)
             push de ; pass x and y            
-            call _set_grid_value_asm ;
+            call set_grid_value ;
             pop de ; restore d = y, e = x
 
-            push de ; pass x and y
-            call _get_cell_location_asm ; hl = cell location
+            call get_cell_location ; hl = cell location
 
             ; updated_cells[updated_cell_count] = cell_location;
             ex de, hl ; de = cell location            

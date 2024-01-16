@@ -40,14 +40,12 @@ _clear_screen_asm:
             ldir ; loop and set the rest            
             ret
 
-PUBLIC _clear_cell_at_asm
 ;----------
-; clear_cell_at_asm
+; clear_cell_at
 ; inputs: b = y, c = x
 ; alters: a, bc, de
 ;----------
-_clear_cell_at_asm:
-            ; extern void clear_cell_at_asm(uint8_t x, uint8_t y) __z88dk_callee;
+clear_cell_at:
             pop hl ; hl = ret address
             pop de ; d = y, e = x
             push hl ; ret address back on stack
@@ -61,14 +59,12 @@ _clear_cell_at_asm:
             call print_char_at
             ret
 
-PUBLIC _print_cell_at_asm
 ;----------
-; print_cell_at_asm
+; print_cell_at
 ; inputs: d = y, e = x, c = ink
 ; alters: a, bc, de, hl
 ;----------
-_print_cell_at_asm:
-            ; extern void print_cell_at_asm(uint8_t x, uint8_t y, uint16_t ink) __z88dk_callee;
+print_cell_at:
             pop hl ; hl = ret address
             pop de ; d = y, e = x
             pop bc ; c = ink
@@ -100,14 +96,12 @@ print_char_at_loop:
             djnz print_char_at_loop ; loop 8 times
             ret
 
-PUBLIC _print_block_at_asm
 ;----------
-; print_block_at_asm
+; print_block_at
 ; inputs: d = y, e = x, c = ink
 ; alters: a, bc, de
 ;----------
-_print_block_at_asm:
-            ; extern void print_block_at_asm(uint8_t x, uint8_t y, uint16_t ink) __z88dk_callee;
+print_block_at:
             pop hl ; hl = ret address
             pop de ; d = y, e = x
             pop bc ; c = ink
